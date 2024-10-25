@@ -157,7 +157,6 @@ test.group('Error parser', () => {
       await unidici.fetch('http://locahost:8100')
     } catch (error) {
       const { frames } = await new ErrorParser().parse(error)
-      console.log(error, frames)
       assert.equal(frames[2].fileName, fileURLToPath(import.meta.url))
       assert.equal(frames[2].lineNumber, 157)
       assert.equal(frames[2].type, 'app')
@@ -178,7 +177,6 @@ test.group('Error parser', () => {
       await unidici.fetch('http://locahost:8100')
     } catch (error) {
       const { frames } = await new ErrorParser({ offset: 2 }).parse(error)
-      console.log(error, frames)
       assert.equal(frames[0].fileName, fileURLToPath(import.meta.url))
       assert.equal(frames[0].lineNumber, 177)
       assert.equal(frames[0].type, 'app')

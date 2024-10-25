@@ -139,7 +139,7 @@ export class ErrorParser {
   #getFrameType(fileName: string): StackFrame['type'] {
     return fileName.includes('node:')
       ? 'native'
-      : fileName.includes('node_modules/')
+      : fileName.includes('node_modules/') || fileName.includes('node_modules\\')
         ? 'module'
         : 'app'
   }
