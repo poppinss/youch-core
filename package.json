@@ -1,0 +1,124 @@
+{
+  "name": "youch-core",
+  "description": "",
+  "version": "0.0.0",
+  "engines": {
+    "node": ">=20.6.0"
+  },
+  "type": "module",
+  "files": [
+    "build",
+    "!build/bin",
+    "!build/tests"
+  ],
+  "main": "build/index.js",
+  "exports": {
+    ".": "./build/index.js"
+  },
+  "scripts": {
+    "pretest": "npm run lint",
+    "test": "c8 npm run quick:test",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit",
+    "precompile": "npm run lint",
+    "compile": "tsup-node && tsc --emitDeclarationOnly --declaration",
+    "build": "npm run compile",
+    "version": "npm run build",
+    "prepublishOnly": "npm run build",
+    "release": "release-it",
+    "quick:test": "node --import=ts-node-maintained/register/esm --enable-source-maps bin/test.ts"
+  },
+  "devDependencies": {
+    "@adonisjs/eslint-config": "^2.0.0-beta.6",
+    "@adonisjs/prettier-config": "^1.4.0",
+    "@adonisjs/tsconfig": "^1.4.0",
+    "@japa/assert": "^3.0.0",
+    "@japa/expect": "^3.0.0-1",
+    "@japa/expect-type": "^2.0.2",
+    "@japa/file-system": "^2.3.0",
+    "@japa/runner": "^3.0.0-9",
+    "@release-it/conventional-changelog": "^8.0.1",
+    "@swc/core": "^1.7.23",
+    "@types/node": "^22.5.4",
+    "ansis": "^3.3.2",
+    "axios": "^1.7.7",
+    "c8": "^10.1.2",
+    "eslint": "^9.9.1",
+    "got": "^14.4.3",
+    "prettier": "^3.3.3",
+    "release-it": "^17.6.0",
+    "strip-ansi": "^7.1.0",
+    "tinyhighlight": "^0.3.2",
+    "ts-node-maintained": "^10.9.4",
+    "tsup": "^8.2.4",
+    "typescript": "^5.5.4",
+    "undici": "^6.20.1"
+  },
+  "homepage": "https://github.com/poppinss/youch-core#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/poppinss/youch-core.git"
+  },
+  "bugs": {
+    "url": "https://github.com/poppinss/youch-core/issues"
+  },
+  "keywords": [
+    "pretty-print",
+    "pretty-error"
+  ],
+  "author": "Harminder Virk <virk@adonisjs.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "tsup": {
+    "entry": [
+      "index.ts"
+    ],
+    "outDir": "./build",
+    "clean": true,
+    "format": "esm",
+    "dts": false,
+    "sourcemap": false,
+    "target": "esnext"
+  },
+  "release-it": {
+    "git": {
+      "requireCleanWorkingDir": true,
+      "requireUpstream": true,
+      "commitMessage": "chore(release): ${version}",
+      "tagAnnotation": "v${version}",
+      "push": true,
+      "tagName": "v${version}"
+    },
+    "github": {
+      "release": true
+    },
+    "npm": {
+      "publish": true,
+      "skipChecks": true
+    },
+    "plugins": {
+      "@release-it/conventional-changelog": {
+        "preset": {
+          "name": "angular"
+        }
+      }
+    }
+  },
+  "c8": {
+    "reporter": [
+      "text",
+      "html"
+    ],
+    "exclude": [
+      "tests/**"
+    ]
+  },
+  "prettier": "@adonisjs/prettier-config",
+  "dependencies": {
+    "error-stack-parser-es": "^0.1.5"
+  }
+}

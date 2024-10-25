@@ -1,0 +1,303 @@
+/*
+ * youch-core
+ *
+ * (c) Poppinss
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+import got from 'got'
+import axios from 'axios'
+import unidici from 'undici'
+import { join } from 'node:path'
+import { test } from '@japa/runner'
+import { fileURLToPath } from 'node:url'
+import { readFile } from 'node:fs/promises'
+import { httpServer } from './helpers.js'
+import { ErrorParser } from '../src/parser.js'
+
+test.group('Error parser', () => {
+  test('should parse error', async ({ assert }) => {
+    const error = new Error('Something went wrong')
+    const { frames } = await new ErrorParser().parse(error)
+
+    assert.equal(frames[0].fileName, fileURLToPath(import.meta.url))
+    assert.equal(frames[0].lineNumber, 22)
+    assert.equal(frames[0].type, 'app')
+    assert.equal(frames[0].fileType, 'fs')
+    assert.equal(
+      frames[0].source!.find(({ lineNumber }) => lineNumber === 22)?.chunk,
+      `    const error = new Error('Something went wrong')`
+    )
+  })
+
+  test('should parse error stack pointing to invalid file path', async ({ assert }) => {
+    const error = new Error('Something went wrong')
+    error.stack = error.stack!.replace(fileURLToPath(import.meta.url), 'invalid-path')
+
+    const { frames } = await new ErrorParser().parse(error)
+
+    assert.equal(frames[0].fileName, 'invalid-path')
+    assert.equal(frames[0].lineNumber, 36)
+    assert.equal(frames[0].type, 'app')
+    assert.equal(frames[0].fileType, 'fs')
+    assert.isUndefined(frames[0].source)
+  })
+
+  test('should parse error stack pointing webpack file path', async ({ assert }) => {
+    const error = new Error('Something went wrong')
+    error.stack = error.stack!.replace(
+      fileURLToPath(import.meta.url),
+      join(fileURLToPath(import.meta.url), 'dist', 'webpack:')
+    )
+
+    const { frames } = await new ErrorParser().parse(error)
+    assert.equal(frames[0].fileName, join(fileURLToPath(import.meta.url), 'dist', 'webpack:'))
+    assert.equal(frames[0].lineNumber, 49)
+    assert.equal(frames[0].type, 'app')
+    assert.equal(frames[0].fileType, 'fs')
+    assert.isUndefined(frames[0].source)
+  })
+
+  test('should parse error stack from browser', async ({ assert }) => {
+    const error = {
+      message: 'hello is not defined',
+      stack: `ReferenceError: hello is not defined
+    at Home (http://localhost:3333/inertia/pages/home.tsx?t=1729422957400:25:5)
+    at renderWithHooks (http://localhost:3333/node_modules/.vite/deps/react-dom_client.js?v=251581c7:11548:26)
+    at mountIndeterminateComponent (http://localhost:3333/node_modules/.vite/deps/react-dom_client.js?v=251581c7:14926:21)
+    at beginWork (http://localhost:3333/node_modules/.vite/deps/react-dom_client.js?v=251581c7:15914:22)
+    at beginWork$1 (http://localhost:3333/node_modules/.vite/deps/react-dom_client.js?v=251581c7:19753:22)
+    at performUnitOfWork (http://localhost:3333/node_modules/.vite/deps/react-dom_client.js?v=251581c7:19198:20)
+    at workLoopSync (http://localhost:3333/node_modules/.vite/deps/react-dom_client.js?v=251581c7:19137:13)
+    at renderRootSync (http://localhost:3333/node_modules/.vite/deps/react-dom_client.js?v=251581c7:19116:15)
+    at recoverFromConcurrentError (http://localhost:3333/node_modules/.vite/deps/react-dom_client.js?v=251581c7:18736:28)
+    at performConcurrentWorkOnRoot (http://localhost:3333/node_modules/.vite/deps/react-dom_client.js?v=251581c7:18684:30)`,
+    }
+
+    const { frames } = await new ErrorParser().parse(error)
+    assert.equal(frames[0].fileName, 'http://localhost:3333/inertia/pages/home.tsx?t=1729422957400')
+    assert.equal(frames[0].lineNumber, 25)
+    assert.equal(frames[0].type, 'app')
+    assert.equal(frames[0].fileType, 'http')
+    assert.isUndefined(frames[0].source)
+  })
+
+  test('should parse error from file with sourcemaps', async ({ assert }) => {
+    assert.plan(5)
+
+    try {
+      // @ts-expect-error
+      const { default: mkay } = await import('./fixtures/stacktracey/mkay.uglified.cjs')
+      mkay()
+    } catch (error) {
+      const { frames } = await new ErrorParser().parse(error)
+      assert.equal(
+        frames[0].fileName,
+        fileURLToPath(new URL('./fixtures/stacktracey/mkay.cjs', import.meta.url))
+      )
+      assert.equal(frames[0].lineNumber, 4)
+      assert.equal(frames[0].type, 'app')
+      assert.equal(frames[0].fileType, 'fs')
+      assert.equal(
+        frames[0].source!.find(({ lineNumber }) => lineNumber === 4)?.chunk,
+        `  throw new Error ('mkay') }`
+      )
+    }
+  })
+
+  test('should parse syntax errors', async ({ assert }) => {
+    assert.plan(6)
+
+    try {
+      // @ts-expect-error
+      await import('./fixtures/stacktracey/syntax_error.cjs')
+    } catch (error) {
+      const { frames } = await new ErrorParser().parse(error)
+      assert.equal(
+        frames[0].fileName,
+        fileURLToPath(new URL('./fixtures/stacktracey/syntax_error.cjs', import.meta.url))
+      )
+      assert.equal(frames[0].lineNumber, 2)
+      assert.equal(frames[0].type, 'app')
+      assert.equal(frames[0].fileType, 'fs')
+      assert.equal(
+        frames[0].source!.find(({ lineNumber }) => lineNumber === 2)?.chunk,
+        `foo->bar ()`
+      )
+
+      /**
+       * All other frames will be from the native code
+       */
+      assert.equal(frames[1].type, 'native')
+    }
+  })
+
+  test('should parse "got" network timeout error', async () => {
+    /**
+     * Got stack frames do not point back to client.
+     * https://github.com/sindresorhus/got/issues/2293
+     *
+     * Custom solution needed
+     * https://github.com/sindresorhus/got/issues/1077
+     * https://github.com/sindresorhus/got/blob/main/documentation/async-stack-frames.md#conclusion
+     */
+    try {
+      await got('http://locahost:8100', { timeout: { connect: 100 }, retry: { limit: 0 } })
+    } catch (error) {
+      await new ErrorParser().parse(error)
+    }
+  }).timeout(4000)
+
+  test('should parse "undici" network timeout error', async ({ assert }) => {
+    assert.plan(6)
+
+    try {
+      await unidici.fetch('http://locahost:8100')
+    } catch (error) {
+      const { frames } = await new ErrorParser().parse(error)
+      assert.equal(frames[2].fileName, fileURLToPath(import.meta.url))
+      assert.equal(frames[2].lineNumber, 155)
+      assert.equal(frames[2].type, 'app')
+      assert.equal(frames[2].fileType, 'fs')
+      assert.equal(
+        frames[2].source!.find(({ lineNumber }) => lineNumber === 155)?.chunk,
+        `      await unidici.fetch('http://locahost:8100')`
+      )
+
+      assert.equal(frames[0].type, 'module')
+    }
+  }).timeout(4000)
+
+  test('should allow offsetting frames', async ({ assert }) => {
+    assert.plan(6)
+
+    try {
+      await unidici.fetch('http://locahost:8100')
+    } catch (error) {
+      const { frames } = await new ErrorParser({ offset: 2 }).parse(error)
+      assert.equal(frames[0].fileName, fileURLToPath(import.meta.url))
+      assert.equal(frames[0].lineNumber, 175)
+      assert.equal(frames[0].type, 'app')
+      assert.equal(frames[0].fileType, 'fs')
+      assert.equal(frames[1].type, 'module')
+      assert.equal(
+        frames[0].source!.find(({ lineNumber }) => lineNumber === 175)?.chunk,
+        `      await unidici.fetch('http://locahost:8100')`
+      )
+    }
+  }).timeout(4000)
+
+  test('should parse "got" non-200 exceptions', async ({ assert }) => {
+    assert.plan(6)
+
+    httpServer.create((_, res) => {
+      res.writeHead(400)
+      res.write('Access denied')
+      res.end()
+    })
+
+    try {
+      await got('http://localhost:3000')
+    } catch (error) {
+      console.log(error)
+      const { frames } = await new ErrorParser().parse(error)
+      assert.equal(frames[2].fileName, fileURLToPath(import.meta.url))
+      assert.equal(frames[2].lineNumber, 200)
+      assert.equal(frames[2].type, 'app')
+      assert.equal(frames[2].fileType, 'fs')
+      assert.equal(
+        frames[2].source!.find(({ lineNumber }) => lineNumber === 210)?.chunk,
+        `      await unidici.fetch('http://localhost:3000')`
+      )
+
+      assert.equal(frames[0].type, 'module')
+    }
+  })
+    .timeout(4000)
+    .skip(true, 'Will tackle metadata capture later')
+
+  test('should parse "axios" non-200 exceptions', async ({ assert }) => {
+    assert.plan(6)
+
+    httpServer.create((_, res) => {
+      res.writeHead(400)
+      res.write('Access denied')
+      res.end()
+    })
+
+    try {
+      await axios('http://localhost:3000')
+    } catch (error) {
+      const { frames } = await new ErrorParser().parse(error)
+      assert.equal(frames[2].fileName, fileURLToPath(import.meta.url))
+      assert.equal(frames[2].lineNumber, 229)
+      assert.equal(frames[2].type, 'app')
+      assert.equal(frames[2].fileType, 'fs')
+      assert.equal(
+        frames[2].source!.find(({ lineNumber }) => lineNumber === 229)?.chunk,
+        `      await unidici.fetch('http://localhost:3000')`
+      )
+
+      assert.equal(frames[0].type, 'module')
+    }
+  })
+    .timeout(4000)
+    .skip(true, 'Will tackle metadata capture later')
+
+  test('normalize boolean thrown as an error', async ({ assert }) => {
+    const error = await new ErrorParser().parse(true)
+    assert.equal(error.message, 'true')
+    assert.equal(error.cause, true)
+  })
+
+  test('normalize promise thrown as an error', async ({ assert }) => {
+    const p = new Promise(() => {})
+    const error = await new ErrorParser().parse(p)
+    assert.equal(error.message, '{}')
+    assert.equal(error.cause, p)
+  })
+
+  test('define custom parser', async ({ assert }) => {
+    const p = new Promise(() => {})
+    const parser = new ErrorParser()
+    parser.useParser((value) => {
+      return value instanceof Promise ? new Error('Promise cannot be thrown') : value
+    })
+
+    const error = await parser.parse(p)
+    assert.equal(error.message, 'Promise cannot be thrown')
+    assert.equal(error.frames[0].fileName, fileURLToPath(import.meta.url))
+    assert.equal(error.frames[0].lineNumber, 264)
+    assert.equal(error.frames[0].type, 'app')
+    assert.equal(error.frames[0].fileType, 'fs')
+    assert.equal(
+      error.frames[0].source!.find(({ lineNumber }) => lineNumber === 264)?.chunk,
+      `      return value instanceof Promise ? new Error('Promise cannot be thrown') : value`
+    )
+  })
+
+  test('define custom source loader', async ({ assert }) => {
+    const error = new Error('Something went wrong')
+    const parser = new ErrorParser()
+
+    parser.defineSourceLoader(async (filePath) => {
+      return {
+        filePath,
+        contents: await readFile(import.meta.filename, 'utf-8'),
+      }
+    })
+
+    const parsedError = await parser.parse(error)
+    assert.equal(error.message, 'Something went wrong')
+    assert.equal(parsedError.frames[0].fileName, fileURLToPath(import.meta.url))
+    assert.equal(parsedError.frames[0].lineNumber, 280)
+    assert.equal(parsedError.frames[0].type, 'app')
+    assert.equal(parsedError.frames[0].fileType, 'fs')
+    assert.equal(
+      parsedError.frames[0].source!.find(({ lineNumber }) => lineNumber === 280)?.chunk,
+      `    const error = new Error('Something went wrong')`
+    )
+  })
+})
