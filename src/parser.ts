@@ -100,12 +100,20 @@ export class ErrorParser {
    */
   #parseSyntaxError(error: SyntaxError): ESFrame[] {
     const [sourceIdentifier] = error.stack?.split('\n') || []
-    const [fileName, lineNumber] = sourceIdentifier.split(':')
-    if (fileName && !Number.isNaN(Number(lineNumber))) {
+    /**
+     * We need to assume the last chunk in the array is the line
+     * number and rest is part of the filename. For example:
+     * In windows, the filepath contains a colon. "D:\youch-core"
+     */
+    const tokens = sourceIdentifier.split(':')
+    const lineNumber = Number(tokens.pop())
+    const fileName = tokens.join(':')
+
+    if (fileName && !Number.isNaN(lineNumber)) {
       return [
         {
           fileName: fileName,
-          lineNumber: Number(lineNumber),
+          lineNumber: lineNumber,
           source: sourceIdentifier,
         },
       ]
