@@ -158,11 +158,11 @@ test.group('Error parser', () => {
     } catch (error) {
       const { frames } = await new ErrorParser().parse(error)
       assert.equal(frames[2].fileName, fileURLToPath(import.meta.url))
-      assert.equal(frames[2].lineNumber, 155)
+      assert.equal(frames[2].lineNumber, 157)
       assert.equal(frames[2].type, 'app')
       assert.equal(frames[2].fileType, 'fs')
       assert.equal(
-        frames[2].source!.find(({ lineNumber }) => lineNumber === 155)?.chunk,
+        frames[2].source!.find(({ lineNumber }) => lineNumber === 157)?.chunk,
         `      await unidici.fetch('http://locahost:8100')`
       )
 
@@ -178,12 +178,12 @@ test.group('Error parser', () => {
     } catch (error) {
       const { frames } = await new ErrorParser({ offset: 2 }).parse(error)
       assert.equal(frames[0].fileName, fileURLToPath(import.meta.url))
-      assert.equal(frames[0].lineNumber, 175)
+      assert.equal(frames[0].lineNumber, 177)
       assert.equal(frames[0].type, 'app')
       assert.equal(frames[0].fileType, 'fs')
       assert.equal(frames[1].type, 'module')
       assert.equal(
-        frames[0].source!.find(({ lineNumber }) => lineNumber === 175)?.chunk,
+        frames[0].source!.find(({ lineNumber }) => lineNumber === 177)?.chunk,
         `      await unidici.fetch('http://locahost:8100')`
       )
     }
@@ -204,11 +204,11 @@ test.group('Error parser', () => {
       console.log(error)
       const { frames } = await new ErrorParser().parse(error)
       assert.equal(frames[2].fileName, fileURLToPath(import.meta.url))
-      assert.equal(frames[2].lineNumber, 200)
+      assert.equal(frames[2].lineNumber, 202)
       assert.equal(frames[2].type, 'app')
       assert.equal(frames[2].fileType, 'fs')
       assert.equal(
-        frames[2].source!.find(({ lineNumber }) => lineNumber === 210)?.chunk,
+        frames[2].source!.find(({ lineNumber }) => lineNumber === 202)?.chunk,
         `      await unidici.fetch('http://localhost:3000')`
       )
 
@@ -232,11 +232,11 @@ test.group('Error parser', () => {
     } catch (error) {
       const { frames } = await new ErrorParser().parse(error)
       assert.equal(frames[2].fileName, fileURLToPath(import.meta.url))
-      assert.equal(frames[2].lineNumber, 229)
+      assert.equal(frames[2].lineNumber, 231)
       assert.equal(frames[2].type, 'app')
       assert.equal(frames[2].fileType, 'fs')
       assert.equal(
-        frames[2].source!.find(({ lineNumber }) => lineNumber === 229)?.chunk,
+        frames[2].source!.find(({ lineNumber }) => lineNumber === 231)?.chunk,
         `      await unidici.fetch('http://localhost:3000')`
       )
 
@@ -269,11 +269,11 @@ test.group('Error parser', () => {
     const error = await parser.parse(p)
     assert.equal(error.message, 'Promise cannot be thrown')
     assert.equal(error.frames[0].fileName, fileURLToPath(import.meta.url))
-    assert.equal(error.frames[0].lineNumber, 264)
+    assert.equal(error.frames[0].lineNumber, 266)
     assert.equal(error.frames[0].type, 'app')
     assert.equal(error.frames[0].fileType, 'fs')
     assert.equal(
-      error.frames[0].source!.find(({ lineNumber }) => lineNumber === 264)?.chunk,
+      error.frames[0].source!.find(({ lineNumber }) => lineNumber === 266)?.chunk,
       `      return value instanceof Promise ? new Error('Promise cannot be thrown') : value`
     )
   })
@@ -292,11 +292,11 @@ test.group('Error parser', () => {
     const parsedError = await parser.parse(error)
     assert.equal(error.message, 'Something went wrong')
     assert.equal(parsedError.frames[0].fileName, fileURLToPath(import.meta.url))
-    assert.equal(parsedError.frames[0].lineNumber, 280)
+    assert.equal(parsedError.frames[0].lineNumber, 282)
     assert.equal(parsedError.frames[0].type, 'app')
     assert.equal(parsedError.frames[0].fileType, 'fs')
     assert.equal(
-      parsedError.frames[0].source!.find(({ lineNumber }) => lineNumber === 280)?.chunk,
+      parsedError.frames[0].source!.find(({ lineNumber }) => lineNumber === 282)?.chunk,
       `    const error = new Error('Something went wrong')`
     )
   })
