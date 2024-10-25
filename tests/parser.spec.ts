@@ -115,6 +115,7 @@ test.group('Error parser', () => {
       await import('./fixtures/stacktracey/syntax_error.cjs')
     } catch (error) {
       const { frames } = await new ErrorParser().parse(error)
+      console.log(error, frames)
       assert.equal(
         frames[0].fileName,
         fileURLToPath(new URL('./fixtures/stacktracey/syntax_error.cjs', import.meta.url))
