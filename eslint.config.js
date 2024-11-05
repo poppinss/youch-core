@@ -1,4 +1,4 @@
 import { configPkg } from '@adonisjs/eslint-config'
 export default configPkg({
-  ignores: ['tests/fixtures/*'],
+  ignores: ['tests/fixtures/*', 'coverage/*'],
 })
