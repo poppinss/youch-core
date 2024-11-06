@@ -7,6 +7,8 @@
  * file that was distributed with this source code.
  */
 
+import { inspect } from 'node:util'
+import { Exception } from '@poppinss/exception'
 import { parse, StackFrame as ESFrame } from 'error-stack-parser-es'
 
 import debug from './debug.js'
@@ -64,7 +66,10 @@ export class ErrorParser {
       return source as Error
     }
 
-    return new Error(JSON.stringify(source), { cause: source })
+    const error = new Exception(JSON.stringify(source))
+    error.help =
+      'To get as much information as possible from your errors, make sure to throw Error objects. See <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error">https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error</a> for more information.'
+    return error
   }
 
   /**
@@ -290,10 +295,11 @@ export class ErrorParser {
       name: error.name,
       metadata: [],
       frames: await this.#enhanceFrames(esFrames),
-      hint: 'hint' in error ? (error.hint as string) : undefined,
-      code: 'code' in error ? (error.code as string) : undefined,
+      hint: 'hint' in error ? String(error.hint) : 'help' in error ? String(error.help) : undefined,
+      code: 'code' in error ? String(error.code) : undefined,
       cause: error.cause,
       stack: error.stack,
+      raw: inspect(error),
     } satisfies ParsedError
 
     for (let transformer of this.#transformers) {

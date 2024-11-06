@@ -26,6 +26,11 @@ export interface ParsedError {
   name: string
   frames: StackFrame[]
   metadata: MetadataGroup[]
+  /**
+   * Referenced to the raw error formatted using util.inspect
+   * method.
+   */
+  raw: string
   cause?: unknown
   hint?: string
   code?: string

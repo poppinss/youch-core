@@ -16,18 +16,20 @@ import { fileURLToPath } from 'node:url'
 import { readFile } from 'node:fs/promises'
 import { httpServer } from './helpers.js'
 import { ErrorParser } from '../src/parser.js'
+import { inspect } from 'node:util'
 
 test.group('Error parser', () => {
   test('should parse error', async ({ assert }) => {
     const error = new Error('Something went wrong')
-    const { frames } = await new ErrorParser().parse(error)
+    const { frames, raw } = await new ErrorParser().parse(error)
 
+    assert.equal(raw, inspect(error))
     assert.equal(frames[0].fileName, fileURLToPath(import.meta.url))
-    assert.equal(frames[0].lineNumber, 22)
+    assert.equal(frames[0].lineNumber, 23)
     assert.equal(frames[0].type, 'app')
     assert.equal(frames[0].fileType, 'fs')
     assert.equal(
-      frames[0].source!.find(({ lineNumber }) => lineNumber === 22)?.chunk,
+      frames[0].source!.find(({ lineNumber }) => lineNumber === 23)?.chunk,
       `    const error = new Error('Something went wrong')`
     )
   })
@@ -39,7 +41,7 @@ test.group('Error parser', () => {
     const { frames } = await new ErrorParser().parse(error)
 
     assert.equal(frames[0].fileName, 'invalid-path')
-    assert.equal(frames[0].lineNumber, 36)
+    assert.equal(frames[0].lineNumber, 38)
     assert.equal(frames[0].type, 'app')
     assert.equal(frames[0].fileType, 'fs')
     assert.isUndefined(frames[0].source)
@@ -54,7 +56,7 @@ test.group('Error parser', () => {
 
     const { frames } = await new ErrorParser().parse(error)
     assert.equal(frames[0].fileName, join(fileURLToPath(import.meta.url), 'dist', 'webpack:'))
-    assert.equal(frames[0].lineNumber, 49)
+    assert.equal(frames[0].lineNumber, 51)
     assert.equal(frames[0].type, 'app')
     assert.equal(frames[0].fileType, 'fs')
     assert.isUndefined(frames[0].source)
@@ -158,11 +160,11 @@ test.group('Error parser', () => {
     } catch (error) {
       const { frames } = await new ErrorParser().parse(error)
       assert.equal(frames[2].fileName, fileURLToPath(import.meta.url))
-      assert.equal(frames[2].lineNumber, 157)
+      assert.equal(frames[2].lineNumber, 159)
       assert.equal(frames[2].type, 'app')
       assert.equal(frames[2].fileType, 'fs')
       assert.equal(
-        frames[2].source!.find(({ lineNumber }) => lineNumber === 157)?.chunk,
+        frames[2].source!.find(({ lineNumber }) => lineNumber === 159)?.chunk,
         `      await unidici.fetch('http://locahost:8100')`
       )
 
@@ -178,12 +180,12 @@ test.group('Error parser', () => {
     } catch (error) {
       const { frames } = await new ErrorParser({ offset: 2 }).parse(error)
       assert.equal(frames[0].fileName, fileURLToPath(import.meta.url))
-      assert.equal(frames[0].lineNumber, 177)
+      assert.equal(frames[0].lineNumber, 179)
       assert.equal(frames[0].type, 'app')
       assert.equal(frames[0].fileType, 'fs')
       assert.equal(frames[1].type, 'module')
       assert.equal(
-        frames[0].source!.find(({ lineNumber }) => lineNumber === 177)?.chunk,
+        frames[0].source!.find(({ lineNumber }) => lineNumber === 179)?.chunk,
         `      await unidici.fetch('http://locahost:8100')`
       )
     }
@@ -204,11 +206,11 @@ test.group('Error parser', () => {
       console.log(error)
       const { frames } = await new ErrorParser().parse(error)
       assert.equal(frames[2].fileName, fileURLToPath(import.meta.url))
-      assert.equal(frames[2].lineNumber, 202)
+      assert.equal(frames[2].lineNumber, 204)
       assert.equal(frames[2].type, 'app')
       assert.equal(frames[2].fileType, 'fs')
       assert.equal(
-        frames[2].source!.find(({ lineNumber }) => lineNumber === 202)?.chunk,
+        frames[2].source!.find(({ lineNumber }) => lineNumber === 204)?.chunk,
         `      await unidici.fetch('http://localhost:3000')`
       )
 
@@ -232,11 +234,11 @@ test.group('Error parser', () => {
     } catch (error) {
       const { frames } = await new ErrorParser().parse(error)
       assert.equal(frames[2].fileName, fileURLToPath(import.meta.url))
-      assert.equal(frames[2].lineNumber, 231)
+      assert.equal(frames[2].lineNumber, 233)
       assert.equal(frames[2].type, 'app')
       assert.equal(frames[2].fileType, 'fs')
       assert.equal(
-        frames[2].source!.find(({ lineNumber }) => lineNumber === 231)?.chunk,
+        frames[2].source!.find(({ lineNumber }) => lineNumber === 233)?.chunk,
         `      await unidici.fetch('http://localhost:3000')`
       )
 
@@ -249,14 +251,20 @@ test.group('Error parser', () => {
   test('normalize boolean thrown as an error', async ({ assert }) => {
     const error = await new ErrorParser().parse(true)
     assert.equal(error.message, 'true')
-    assert.equal(error.cause, true)
+    assert.equal(
+      error.hint,
+      'To get as much information as possible from your errors, make sure to throw Error objects. See <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error">https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error</a> for more information.'
+    )
   })
 
   test('normalize promise thrown as an error', async ({ assert }) => {
     const p = new Promise(() => {})
     const error = await new ErrorParser().parse(p)
     assert.equal(error.message, '{}')
-    assert.equal(error.cause, p)
+    assert.equal(
+      error.hint,
+      'To get as much information as possible from your errors, make sure to throw Error objects. See <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error">https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error</a> for more information.'
+    )
   })
 
   test('define custom parser', async ({ assert }) => {
@@ -269,11 +277,11 @@ test.group('Error parser', () => {
     const error = await parser.parse(p)
     assert.equal(error.message, 'Promise cannot be thrown')
     assert.equal(error.frames[0].fileName, fileURLToPath(import.meta.url))
-    assert.equal(error.frames[0].lineNumber, 266)
+    assert.equal(error.frames[0].lineNumber, 274)
     assert.equal(error.frames[0].type, 'app')
     assert.equal(error.frames[0].fileType, 'fs')
     assert.equal(
-      error.frames[0].source!.find(({ lineNumber }) => lineNumber === 266)?.chunk,
+      error.frames[0].source!.find(({ lineNumber }) => lineNumber === 274)?.chunk,
       `      return value instanceof Promise ? new Error('Promise cannot be thrown') : value`
     )
   })
@@ -292,11 +300,11 @@ test.group('Error parser', () => {
     const parsedError = await parser.parse(error)
     assert.equal(error.message, 'Something went wrong')
     assert.equal(parsedError.frames[0].fileName, fileURLToPath(import.meta.url))
-    assert.equal(parsedError.frames[0].lineNumber, 282)
+    assert.equal(parsedError.frames[0].lineNumber, 290)
     assert.equal(parsedError.frames[0].type, 'app')
     assert.equal(parsedError.frames[0].fileType, 'fs')
     assert.equal(
-      parsedError.frames[0].source!.find(({ lineNumber }) => lineNumber === 282)?.chunk,
+      parsedError.frames[0].source!.find(({ lineNumber }) => lineNumber === 290)?.chunk,
       `    const error = new Error('Something went wrong')`
     )
   })
