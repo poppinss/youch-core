@@ -27,10 +27,11 @@ export interface ParsedError {
   frames: StackFrame[]
   metadata: MetadataGroup[]
   /**
-   * Referenced to the raw error formatted using util.inspect
-   * method.
+   * Referenced to the raw error property. The value will always
+   * be an Error object even if the thrown value was not an
+   * error
    */
-  raw: string
+  raw: Error
   cause?: unknown
   hint?: string
   code?: string

@@ -7,7 +7,6 @@
  * file that was distributed with this source code.
  */
 
-import { inspect } from 'node:util'
 import { Exception } from '@poppinss/exception'
 import { parse, StackFrame as ESFrame } from 'error-stack-parser-es'
 
@@ -299,7 +298,7 @@ export class ErrorParser {
       code: 'code' in error ? String(error.code) : undefined,
       cause: error.cause,
       stack: error.stack,
-      raw: inspect(error),
+      raw: error,
     } satisfies ParsedError
 
     for (let transformer of this.#transformers) {
