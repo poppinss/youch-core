@@ -41,7 +41,7 @@
     "@japa/file-system": "^2.3.0",
     "@japa/runner": "^3.1.4",
     "@release-it/conventional-changelog": "^9.0.2",
-    "@swc/core": "^1.8.0",
+    "@swc/core": "^1.9.1",
     "@types/node": "^22.9.0",
     "ansis": "^3.3.2",
     "axios": "^1.7.7",
