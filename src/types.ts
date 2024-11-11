@@ -7,9 +7,6 @@
  * file that was distributed with this source code.
  */
 
-export type MetadataRow = Record<string, string>
-export type MetadataGroup = Record<string, MetadataRow[]>
-
 /**
  * Representation of a source file chunk
  */
@@ -25,7 +22,6 @@ export interface ParsedError {
   message: string
   name: string
   frames: StackFrame[]
-  metadata: MetadataGroup[]
   /**
    * Referenced to the raw error property. The value will always
    * be an Error object even if the thrown value was not an

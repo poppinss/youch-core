@@ -287,12 +287,11 @@ export class ErrorParser {
 
     /**
      * Creating a parsed error object with all the error properties
-     * and the metadata + frames
+     * and the stack frames
      */
     const parsedError = {
       message: error.message,
       name: error.name,
-      metadata: [],
       frames: await this.#enhanceFrames(esFrames),
       hint: 'hint' in error ? String(error.hint) : 'help' in error ? String(error.help) : undefined,
       code: 'code' in error ? String(error.code) : undefined,
