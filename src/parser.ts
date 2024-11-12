@@ -13,6 +13,7 @@ import { parse, StackFrame as ESFrame } from 'error-stack-parser-es'
 import debug from './debug.js'
 import { SourceFile } from './source_file.js'
 import type { Chunk, ParsedError, Parser, SourceLoader, StackFrame, Transformer } from './types.js'
+import { fileURLToPath } from 'node:url'
 
 /**
  * ErrorParser exposes the API to parse an thrown value and extract
@@ -138,6 +139,26 @@ export class ErrorParser {
   }
 
   /**
+   * Replaces windows slash to unix slash
+   */
+  #toUnixSlash(fileName: string) {
+    const isExtendedLengthPath = fileName.startsWith('\\\\?\\')
+    return isExtendedLengthPath ? fileName : fileName.replace(/\\/g, '/')
+  }
+
+  /**
+   * Normalizes the filename to be a path with unix slash. The
+   * URL style paths are also converted to normalized file
+   * paths
+   */
+  #normalizeFileName(fileName: string) {
+    if (fileName.startsWith('file:')) {
+      return this.#toUnixSlash(fileURLToPath(fileName))
+    }
+    return this.#toUnixSlash(fileName)
+  }
+
+  /**
    * Returns the type of the frame.
    */
   #getFrameType(fileName: string): StackFrame['type'] {
@@ -164,16 +185,16 @@ export class ErrorParser {
    */
   async #enhanceFrames(frames: ESFrame[]): Promise<StackFrame[]> {
     let stackFrames: StackFrame[] = []
-    for (let frame of frames) {
-      const { source: raw, ...rest } = frame
+    for (const { source: raw, ...frame } of frames) {
       if (!frame.fileName) {
         stackFrames.push({
-          ...rest,
+          ...frame,
           raw,
         })
         continue
       }
 
+      frame.fileName = this.#normalizeFileName(frame.fileName)
       const type = this.#getFrameType(frame.fileName)
       const fileType = this.#getFrameSourceType(frame.fileName)
       const source =
@@ -182,7 +203,7 @@ export class ErrorParser {
           : undefined
 
       const stackFrame = {
-        ...rest,
+        ...frame,
         source,
         raw,
         type,
@@ -300,7 +321,7 @@ export class ErrorParser {
       raw: error,
     } satisfies ParsedError
 
-    for (let transformer of this.#transformers) {
+    for (const transformer of this.#transformers) {
       await transformer(parsedError, error)
     }
 
