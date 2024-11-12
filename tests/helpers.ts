@@ -45,6 +45,6 @@ export function toUnixSlash(path: string) {
 /**
  * Normalizes a file URL to a unix path
  */
-export function normalizePath(fileURL: string) {
+export function normalizePath(fileURL: string | URL) {
   return toUnixSlash(fileURLToPath(fileURL))
 }
