@@ -314,7 +314,12 @@ export class ErrorParser {
       message: error.message,
       name: error.name,
       frames: await this.#enhanceFrames(esFrames),
-      hint: 'hint' in error ? String(error.hint) : 'help' in error ? String(error.help) : undefined,
+      hint:
+        'hint' in error && error.hint
+          ? String(error.hint)
+          : 'help' in error && error.help
+            ? String(error.help)
+            : undefined,
       code: 'code' in error ? String(error.code) : undefined,
       cause: error.cause,
       stack: error.stack,
