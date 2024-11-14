@@ -40,8 +40,8 @@
     "@japa/expect-type": "^2.0.2",
     "@japa/file-system": "^2.3.0",
     "@japa/runner": "^3.1.4",
-    "@release-it/conventional-changelog": "^9.0.2",
-    "@swc/core": "^1.9.1",
+    "@release-it/conventional-changelog": "^9.0.3",
+    "@swc/core": "^1.9.2",
     "@types/node": "^22.9.0",
     "ansis": "^3.3.2",
     "axios": "^1.7.7",
@@ -55,7 +55,7 @@
     "ts-node-maintained": "^10.9.4",
     "tsup": "^8.3.5",
     "typescript": "^5.6.3",
-    "undici": "^6.20.1"
+    "undici": "^6.21.0"
   },
   "homepage": "https://github.com/poppinss/youch-core#readme",
   "repository": {
