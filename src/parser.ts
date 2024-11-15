@@ -7,19 +7,39 @@
  * file that was distributed with this source code.
  */
 
+import { fileURLToPath } from 'node:url'
+import { readFile } from 'node:fs/promises'
 import { Exception } from '@poppinss/exception'
 import { parse, StackFrame as ESFrame } from 'error-stack-parser-es'
 
 import debug from './debug.js'
 import { SourceFile } from './source_file.js'
 import type { Chunk, ParsedError, Parser, SourceLoader, StackFrame, Transformer } from './types.js'
-import { fileURLToPath } from 'node:url'
 
 /**
  * ErrorParser exposes the API to parse an thrown value and extract
  * the frames along with their location from it.
  */
 export class ErrorParser {
+  /**
+   * FS source loader reads the file contents from the filesystem
+   * for all non-native frames
+   */
+  static fsSourceLoader: SourceLoader = async (frame) => {
+    if (!frame.fileName || frame.fileType !== 'fs' || frame.type === 'native') {
+      return undefined
+    }
+
+    debug('reading contents for source file %s', frame.fileName!)
+    try {
+      return {
+        contents: await readFile(frame.fileName, 'utf-8'),
+      }
+    } catch (error) {
+      debug(`Unable to read source file %s, error %s`, frame.fileName, error.message)
+    }
+  }
+
   /**
    * Cache of preloaded source files along with their absolute
    * path
@@ -36,7 +56,7 @@ export class ErrorParser {
    * Custom source loader to consult for reading the sourcefile
    * contents
    */
-  #sourceLoader?: SourceLoader
+  #sourceLoader: SourceLoader = ErrorParser.fsSourceLoader
 
   /**
    * Parsers are used to prepare the source value for parsing
@@ -76,22 +96,20 @@ export class ErrorParser {
    * Returns the source chunks for a given file and the
    * line number.
    */
-  async #getSource(fileName: string, lineNumber: number): Promise<Chunk[] | undefined> {
-    let sourceFile = this.#sourceFiles.get(fileName)
-    if (!sourceFile) {
-      sourceFile = new SourceFile(
-        this.#sourceLoader
-          ? await this.#sourceLoader(fileName)
-          : {
-              filePath: fileName,
-            }
-      )
-      await sourceFile.load()
-      debug('caching sourcefile instance for %s', fileName)
-      this.#sourceFiles.set(fileName, sourceFile)
+  async #getSource(frame: StackFrame): Promise<Chunk[] | undefined> {
+    let sourceFile = this.#sourceFiles.get(frame.fileName!)
+    if (sourceFile) {
+      debug('reading sourcefile from cache %s', frame.fileName!)
+      return sourceFile.slice(frame.lineNumber ?? 1, 11)
     }
 
-    return sourceFile.slice(lineNumber, 11)
+    const contents = await this.#sourceLoader(frame)
+    if (contents) {
+      sourceFile = new SourceFile(contents)
+      debug('caching sourcefile instance for %s', frame.fileName!)
+      this.#sourceFiles.set(frame.fileName!, sourceFile)
+      return sourceFile.slice(frame.lineNumber ?? 1, 11)
+    }
   }
 
   /**
@@ -186,29 +204,20 @@ export class ErrorParser {
   async #enhanceFrames(frames: ESFrame[]): Promise<StackFrame[]> {
     let stackFrames: StackFrame[] = []
     for (const { source: raw, ...frame } of frames) {
-      if (!frame.fileName) {
-        stackFrames.push({
-          ...frame,
-          raw,
-        })
+      const stackFrame: StackFrame = {
+        ...frame,
+        raw,
+      }
+
+      if (!stackFrame.fileName) {
+        stackFrames.push(stackFrame)
         continue
       }
 
-      frame.fileName = this.#normalizeFileName(frame.fileName)
-      const type = this.#getFrameType(frame.fileName)
-      const fileType = this.#getFrameSourceType(frame.fileName)
-      const source =
-        fileType === 'fs' && type !== 'native'
-          ? await this.#getSource(frame.fileName, frame.lineNumber ?? 1)
-          : undefined
-
-      const stackFrame = {
-        ...frame,
-        source,
-        raw,
-        type,
-        fileType,
-      } satisfies StackFrame
+      stackFrame.fileName = this.#normalizeFileName(stackFrame.fileName)
+      stackFrame.type = this.#getFrameType(stackFrame.fileName)
+      stackFrame.fileType = this.#getFrameSourceType(stackFrame.fileName)
+      stackFrame.source = await this.#getSource(stackFrame)
 
       debug('stack frame %O', stackFrame)
       stackFrames.push(stackFrame)

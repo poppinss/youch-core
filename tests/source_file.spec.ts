@@ -8,58 +8,20 @@
  */
 
 import { test } from '@japa/runner'
-import { fileURLToPath } from 'node:url'
 import { SourceFile } from '../src/source_file.js'
 
 test.group('Source file', () => {
-  test('should load source file contents', async ({ assert, fs }) => {
+  test('should return undefined from slice when content is undefined', async ({ assert, fs }) => {
     const sf = new SourceFile({
-      filePath: fileURLToPath(new URL('./source_files/foo.cjs', fs.baseUrl)),
+      contents: undefined,
     })
-    const contents = await sf.load()
-    assert.fileEquals('source_files/foo.cjs', contents!)
-  })
-
-  test('should not attempt to load source file when contents are provided', async ({
-    assert,
-    fs,
-  }) => {
-    const sf = new SourceFile({
-      filePath: fileURLToPath(new URL('./source_files/foo.cjs', fs.baseUrl)),
-      contents: await fs.contents('source_files/foo.cjs'),
-    })
-    const contents = await sf.load()
-    assert.fileEquals('source_files/foo.cjs', contents!)
-  })
-
-  test('should not throw error when file is missing', async ({ assert, fs }) => {
-    const sf = new SourceFile({
-      filePath: fileURLToPath(new URL('./source_files/bar.cjs', fs.baseUrl)),
-    })
-    const contents = await sf.load()
-    assert.isUndefined(contents)
-  })
-
-  test('should return undefined from slice when file is missing', async ({ assert, fs }) => {
-    const sf = new SourceFile({
-      filePath: fileURLToPath(new URL('./source_files/bar.cjs', fs.baseUrl)),
-    })
-    await sf.load()
     assert.isUndefined(sf.slice(1, 10))
   })
 
-  test('should throw error when slice is called without loading file', async ({ fs }) => {
-    const sf = new SourceFile({
-      filePath: fileURLToPath(new URL('./source_files/bar.cjs', fs.baseUrl)),
-    })
-    sf.slice(1, 10)
-  }).throws('Cannot slice source file. Make sure to call "load" method first')
-
   test('get file contents around a given line number', async ({ assert, fs }) => {
     const sf = new SourceFile({
-      filePath: fileURLToPath(new URL('./source_files/foo.cjs', fs.baseUrl)),
+      contents: await fs.contents('source_files/foo.cjs'),
     })
-    await sf.load()
 
     assert.deepEqual(sf.slice(12, 7), [
       { chunk: '  console.log(`Primary ${process.pid} is running`);', lineNumber: 9 },

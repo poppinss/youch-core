@@ -7,45 +7,21 @@
  * file that was distributed with this source code.
  */
 
-import { readFile } from 'node:fs/promises'
-
 import debug from './debug.js'
 import type { Chunk } from './types.js'
 
 /**
- * SourceFile exposes the API to read the contents of a file and
- * slice it into chunks for displaying the source code of a
- * stack frame
+ * SourceFile exposes the API to slice the contents of a file
+ * into chunks for displaying the source code of a stack
+ * frame
  */
 export class SourceFile {
-  #filePath: string
   #contents?: string
-  #loaded: boolean = false
 
-  constructor(options: { filePath: string; contents?: string }) {
+  constructor(options: { contents?: string }) {
     if ('contents' in options) {
       this.#contents = options.contents
     }
-    this.#filePath = options.filePath
-  }
-
-  /**
-   * Loads the file contents and returns it as a string.
-   * The file contents are cached after the first call
-   * to the "load" method.
-   */
-  async load() {
-    if (this.#contents === undefined) {
-      debug('reading contents for source file %s', this.#filePath)
-      try {
-        this.#contents = await readFile(this.#filePath, 'utf-8')
-      } catch (error) {
-        debug(`Unable to read source file %s, error %s`, this.#filePath, error.message)
-      }
-    }
-
-    this.#loaded = true
-    return this.#contents
   }
 
   /**
@@ -60,10 +36,6 @@ export class SourceFile {
    * ```
    */
   slice(lineNumber: number, bufferSize: number): undefined | Chunk[] {
-    if (!this.#loaded) {
-      throw new Error('Cannot slice source file. Make sure to call "load" method first')
-    }
-
     if (!this.#contents) {
       return undefined
     }

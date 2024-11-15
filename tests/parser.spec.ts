@@ -261,9 +261,8 @@ test.group('Error parser', () => {
     const error = new Error('Something went wrong')
     const parser = new ErrorParser()
 
-    parser.defineSourceLoader(async (filePath) => {
+    parser.defineSourceLoader(async () => {
       return {
-        filePath,
         contents: await readFile(import.meta.filename, 'utf-8'),
       }
     })

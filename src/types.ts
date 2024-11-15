@@ -97,13 +97,15 @@ export interface StackFrame {
  * Source loaders are used to read the contents of the source
  * file.
  */
-export type SourceLoader = (filePath: string) =>
-  | Promise<{
-      filePath: string
-      contents: string
-    }>
+export type SourceLoader = (frame: StackFrame) =>
+  | Promise<
+      | undefined
+      | {
+          contents: string
+        }
+    >
+  | undefined
   | {
-      filePath: string
       contents: string
     }
 
