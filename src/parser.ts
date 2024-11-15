@@ -41,6 +41,18 @@ export class ErrorParser {
   }
 
   /**
+   * Native frames filename identifiers for Node.js and
+   * Deno
+   */
+  #nativeFramesIdentifiers = ['node:', 'ext:']
+
+  /**
+   * Native frames filename identifier for Bun. In case of
+   * bun, the filename exactly matches the keyword "native"
+   */
+  #bunNativeIdentifier = 'native'
+
+  /**
    * Cache of preloaded source files along with their absolute
    * path
    */
@@ -180,9 +192,10 @@ export class ErrorParser {
    * Returns the type of the frame.
    */
   #getFrameType(fileName: string): StackFrame['type'] {
-    return fileName.includes('node:')
+    return this.#nativeFramesIdentifiers.some((identifier) => fileName.includes(identifier)) ||
+      fileName === this.#bunNativeIdentifier
       ? 'native'
-      : fileName.includes('node_modules/') || fileName.includes('node_modules\\')
+      : fileName.includes('node_modules/')
         ? 'module'
         : 'app'
   }
