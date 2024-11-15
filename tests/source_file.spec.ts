@@ -11,7 +11,7 @@ import { test } from '@japa/runner'
 import { SourceFile } from '../src/source_file.js'
 
 test.group('Source file', () => {
-  test('should return undefined from slice when content is undefined', async ({ assert, fs }) => {
+  test('should return undefined from slice when content is undefined', async ({ assert }) => {
     const sf = new SourceFile({
       contents: undefined,
     })
