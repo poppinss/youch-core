@@ -1,7 +1,7 @@
 {
   "name": "youch-core",
   "description": "",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "engines": {
     "node": ">=20.6.0"
   },
