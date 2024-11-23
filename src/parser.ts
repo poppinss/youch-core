@@ -14,7 +14,15 @@ import { parse, StackFrame as ESFrame } from 'error-stack-parser-es'
 
 import debug from './debug.js'
 import { SourceFile } from './source_file.js'
-import type { Chunk, ParsedError, Parser, SourceLoader, StackFrame, Transformer } from './types.js'
+import type {
+  Chunk,
+  Parser,
+  StackFrame,
+  Transformer,
+  ParsedError,
+  SourceLoader,
+  YouchParserOptions,
+} from './types.js'
 
 /**
  * ErrorParser exposes the API to parse an thrown value and extract
@@ -81,7 +89,7 @@ export class ErrorParser {
    */
   #transformers: Transformer[] = []
 
-  constructor(options?: { offset?: number; frameSourceBuffer?: number }) {
+  constructor(options?: YouchParserOptions) {
     options = options ?? {}
     this.#offset = options.offset
   }

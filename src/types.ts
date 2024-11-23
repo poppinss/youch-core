@@ -120,3 +120,22 @@ export type Parser = (source: unknown) => any
  * error value.
  */
 export type Transformer = (error: ParsedError, source: unknown) => void | Promise<void>
+
+/**
+ * Options accepted by the Youch parser
+ */
+export type YouchParserOptions = {
+  /**
+   * Define the offset to skip certain stack frames from
+   * the top
+   */
+  offset?: number
+
+  /**
+   * Number of lines of code to display for the error stack frame.
+   * For example: If you set the frameSourceBuffer=7, then 3 lines
+   * above the error line and 3 lines after the error line will
+   * be displayed.
+   */
+  frameSourceBuffer?: number
+}
