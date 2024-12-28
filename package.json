@@ -1,7 +1,7 @@
 {
   "name": "youch-core",
   "description": "Error parser to parse an error instance into a collection of frames",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "engines": {
     "node": ">=20.6.0"
   },
