@@ -1,9 +1,9 @@
 import ansis from 'ansis'
+import stripAnsi from 'strip-ansi'
 import { readFile } from 'node:fs/promises'
 import { highlight } from 'tinyhighlight/picocolors'
 import { ErrorParser } from '../src/parser.js'
-import { ParsedError } from '../src/types.js'
-import stripAnsi from 'strip-ansi'
+import { type ParsedError } from '../src/types.js'
 
 function print(error: ParsedError) {
   console.log('')

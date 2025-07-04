@@ -8,7 +8,7 @@
  */
 
 import { getActiveTest } from '@japa/runner'
-import { createServer, IncomingMessage, ServerResponse } from 'node:http'
+import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { fileURLToPath } from 'node:url'
 
 export const httpServer = {

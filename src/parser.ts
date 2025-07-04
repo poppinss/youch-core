@@ -10,7 +10,7 @@
 import { fileURLToPath } from 'node:url'
 import { readFile } from 'node:fs/promises'
 import { Exception } from '@poppinss/exception'
-import { parse, StackFrame as ESFrame } from 'error-stack-parser-es'
+import { parse, type StackFrame as ESFrame } from 'error-stack-parser-es'
 
 import debug from './debug.js'
 import { SourceFile } from './source_file.js'
