@@ -1,6 +1,6 @@
 # youch-core
 
-> Error parser to parse an error instance into a collection of frames
+> Error parser used by Youch to parse a JavaScript error into a collection of frames
 
 <br />
 
@@ -8,29 +8,29 @@
 
 ## Introduction
 
-The `youch-core` package contains the Error parser used by [youch](https://github.com/poppinss/youch) to pretty print Errors on the Web and the terminal.
+The `youch-core` package contains the Error parser used by [youch](https://github.com/poppinss/youch) to pretty-print errors on the Web and in the terminal.
 
-It is a low-level package and you will only use it if you want to create your own Error printer while re-using the core Error parsing logic.
+It is a low-level package, and you will only use it if you want to create your own Error printer while reusing the core Error parsing logic.
 
 ## Installation
 
 Install the package from the npm registry as follows.
 
 ```sh
-npm i @poppinss/dumper
+npm i youch-core
 ```
 
 ```sh
-yarn add @poppinss/dumper
+yarn add youch-core
 ```
 
 ```sh
-pnpm add @poppinss/dumper
+pnpm add youch-core
 ```
 
 ## Usage
 
-You may parse an error using the `ErrorParser.parse` method. The `parse` method accepts the erorr object and returns back a Promise with [ParsedError](https://github.com/poppinss/youch-core/blob/0.x/src/types.ts#L21).
+You may parse an error using the `ErrorParser.parse` method. The `parse` method accepts the error object and returns a Promise with [ParsedError](https://github.com/poppinss/youch-core/blob/0.x/src/types.ts#L21).
 
 ```ts
 import { ErrorParser } from 'youch-core'
@@ -41,13 +41,13 @@ import { ErrorParser } from 'youch-core'
 const error = new Error('Something went wrong')
 
 /**
- * Create parser instance and parse the error
+ * Create a parser instance and parse the error
  */
 const parser = new ErrorParser()
 const parsedError = await parser.parse(error)
 ```
 
-The `parsedError.frames` property is an array of stack frames with the **filename**, **line number** and the **source code snippet** for the given frame in the stack.
+The `parsedError.frames` property is an array of stack frames with the **filename**, **line number**, and the **source code snippet** for the given frame in the stack.
 
 ```ts
 parsedError.frames.forEach((frame) => {
@@ -75,13 +75,13 @@ parser.defineSourceLoader(async (stackFrame) => {
 
 ## Contributing
 
-One of the primary goals of Poppinss is to have a vibrant community of users and contributors who believes in the principles of the framework.
+One of the primary goals of Poppinss is to have a vibrant community of users and contributors who believe in the principles of the framework.
 
 We encourage you to read the [contribution guide](https://github.com/poppinss/.github/blob/main/docs/CONTRIBUTING.md) before contributing to the framework.
 
 ## Code of Conduct
 
-In order to ensure that the Poppinss community is welcoming to all, please review and abide by the [Code of Conduct](https://github.com/poppinss/.github/blob/main/docs/CODE_OF_CONDUCT.md).
+To ensure that the Poppinss community is welcoming to all, please review and abide by the [Code of Conduct](https://github.com/poppinss/.github/blob/main/docs/CODE_OF_CONDUCT.md).
 
 ## License
 
